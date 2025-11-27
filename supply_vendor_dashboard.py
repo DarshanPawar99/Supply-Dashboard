@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 
 # ==========================
 # CONFIG – COLUMN NAMES
@@ -37,9 +36,29 @@ st.set_page_config(
 # LOAD DATA
 # ==========================
 @st.cache_data
-def load_vendor_data(file_bytes: bytes) -> pd.DataFrame:
-    """Read uploaded Excel and clean up column names."""
-    df = pd.read_excel(BytesIO(file_bytes))
+def load_vendor_data(uploaded_file) -> pd.DataFrame:
+    """
+    Read uploaded file (CSV/XLSX/XLS) and clean up column names.
+    Falls back with a friendly error if openpyxl is missing.
+    """
+    file_name = uploaded_file.name.lower()
+
+    if file_name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    else:
+        # Excel case: needs openpyxl in the environment
+        try:
+            df = pd.read_excel(uploaded_file, engine="openpyxl")
+        except ImportError:
+            st.error(
+                "To read Excel files (.xlsx / .xls), this app needs the "
+                "`openpyxl` package installed.\n\n"
+                "➡️ Either:\n"
+                "- Add `openpyxl` to your `requirements.txt` on Streamlit Cloud and redeploy, **or**\n"
+                "- Upload the file as a `.csv` instead."
+            )
+            st.stop()
+
     df.columns = df.columns.str.strip()
     return df
 
@@ -151,17 +170,17 @@ st.sidebar.title("Controls")
 
 # File uploader at the very top of sidebar
 uploaded_file = st.sidebar.file_uploader(
-    "Upload vendor dashboard data (.xlsx)",
-    type=["xlsx", "xls"],
-    help="Upload the Excel exported from your vendor master."
+    "Upload vendor dashboard data (.csv / .xlsx / .xls)",
+    type=["csv", "xlsx", "xls"],
+    help="Upload the vendor master file."
 )
 
 if uploaded_file is None:
-    st.info("⬅️ Upload an Excel file from the sidebar to see the dashboard.")
+    st.info("⬅️ Upload a CSV or Excel file from the sidebar to see the dashboard.")
     st.stop()
 
 # Load data from uploaded file
-df = load_vendor_data(uploaded_file.getvalue())
+df = load_vendor_data(uploaded_file)
 
 st.sidebar.header("Filters")
 
