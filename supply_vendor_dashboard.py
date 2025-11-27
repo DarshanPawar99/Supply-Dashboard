@@ -28,7 +28,7 @@ CERT_3_COL = "Certification 3"
 # PAGE CONFIG
 # ==========================
 st.set_page_config(
-    title="Vendor Master Dashboard",
+    page_title="Vendor Master Dashboard",
     layout="wide",
     page_icon="📊"
 )
